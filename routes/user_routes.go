@@ -9,7 +9,9 @@ import (
 	fiberSwagger "github.com/swaggo/fiber-swagger"
 )
 
-func SetupRoutes(app *fiber.App, h *handler.UserHandler, p *handler.ProfileHandler, ts auth.TokenService) {
+func SetupRoutes(app *fiber.App, h *handler.UserHandler, p *handler.ProfileHandler,
+	ts auth.TokenService, a *handler.ArticleHandler) {
+
 	api := app.Group("/api")
 	api.Get("/swagger/*", fiberSwagger.WrapHandler)
 
@@ -20,4 +22,8 @@ func SetupRoutes(app *fiber.App, h *handler.UserHandler, p *handler.ProfileHandl
 	profile := api.Group("/profile")
 	profile.Use(middleware.AuthMiddleware(ts))
 	profile.Get("", p.GetUserProfile)
+
+	article := api.Group("/articles")
+	article.Use(middleware.AuthMiddleware(ts))
+	article.Post("/", a.CreateArticle)
 }

@@ -12,6 +12,7 @@ import (
 	"api-practice/internal/auth"
 	"api-practice/internal/db"
 	"api-practice/internal/handler"
+	"api-practice/internal/minio"
 	"api-practice/internal/model"
 	"api-practice/internal/repository"
 	"api-practice/internal/service"
@@ -29,19 +30,24 @@ func main() {
 	}
 
 	db.Init()
-	dbErr := db.DB.AutoMigrate(&model.User{})
+	dbErr := db.DB.AutoMigrate(&model.User{}, &model.Article{}, &model.Attachment{})
 	if dbErr != nil {
 		return
 	}
 
 	app := fiber.New()
 
-	repo := repository.NewUserRepository()
-	svc := service.NewUserService(repo)
+	userRepository := repository.NewUserRepository()
+	userService := service.NewUserService(userRepository)
 	tokenService := auth.NewTokenService(os.Getenv("SECRET"))
-	userHandler := handler.NewUserHandler(svc, tokenService)
-	profileHandler := handler.NewProfileHandler(svc)
-	routes.SetupRoutes(app, userHandler, profileHandler, tokenService)
+	userHandler := handler.NewUserHandler(userService, tokenService)
+	profileHandler := handler.NewProfileHandler(userService)
+	minio.Init()
+	articleRepository := repository.NewArticleRepository(db.DB)
+	articleService := service.NewArticleService(articleRepository)
+	articleHandler := handler.NewArticleHandler(articleService)
+
+	routes.SetupRoutes(app, userHandler, profileHandler, tokenService, articleHandler)
 
 	errApp := app.Listen(":3000")
 	if errApp != nil {
