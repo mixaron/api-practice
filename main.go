@@ -1,21 +1,50 @@
+// @title Rest API для тестового задания
+// @version 1.0
+// @description API для авторизации по jwt, созданию статей, использования websocket
+// @host localhost:3000
+// @BasePath /api
+// @securityDefinitions.apikey ApiKeyAuth
+// @in header
+// @name Authorization
 package main
 
 import (
-	"fmt"
+	"api-practice/internal/auth"
+	"api-practice/internal/db"
+	"api-practice/internal/handler"
+	"api-practice/internal/model"
+	"api-practice/internal/repository"
+	"api-practice/internal/service"
+	"api-practice/routes"
+	"github.com/gofiber/fiber/v2"
+	"github.com/joho/godotenv"
+	"log"
+	"os"
 )
 
-//TIP <p>To run your code, right-click the code and select <b>Run</b>.</p> <p>Alternatively, click
-// the <icon src="AllIcons.Actions.Execute"/> icon in the gutter and select the <b>Run</b> menu item from here.</p>
-
 func main() {
-	//TIP <p>Press <shortcut actionId="ShowIntentionActions"/> when your caret is at the underlined text
-	// to see how GoLand suggests fixing the warning.</p><p>Alternatively, if available, click the lightbulb to view possible fixes.</p>
-	s := "gopher"
-	fmt.Printf("Hello and welcome, %s!\n", s)
+	err := godotenv.Load()
+	if err != nil {
+		log.Fatal("Ошибка загрузки .env файла")
+	}
 
-	for i := 1; i <= 5; i++ {
-		//TIP <p>To start your debugging session, right-click your code in the editor and select the Debug option.</p> <p>We have set one <icon src="AllIcons.Debugger.Db_set_breakpoint"/> breakpoint
-		// for you, but you can always add more by pressing <shortcut actionId="ToggleLineBreakpoint"/>.</p>
-		fmt.Println("i =", 100/i)
+	db.Init()
+	dbErr := db.DB.AutoMigrate(&model.User{})
+	if dbErr != nil {
+		return
+	}
+
+	app := fiber.New()
+
+	repo := repository.NewUserRepository()
+	svc := service.NewUserService(repo)
+	tokenService := auth.NewTokenService(os.Getenv("SECRET"))
+	userHandler := handler.NewUserHandler(svc, tokenService)
+	profileHandler := handler.NewProfileHandler(svc)
+	routes.SetupRoutes(app, userHandler, profileHandler, tokenService)
+
+	errApp := app.Listen(":3000")
+	if errApp != nil {
+		return
 	}
 }
