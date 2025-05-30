@@ -1,7 +1,7 @@
 package service
 
 import (
-	"api-practice/internal/minio"
+	"api-practice/internal/minio_service"
 	"api-practice/internal/model"
 	"api-practice/internal/repository"
 	"mime/multipart"
@@ -12,11 +12,12 @@ type ArticleService interface {
 }
 
 type articleService struct {
-	repo repository.ArticleRepository
+	repo  repository.ArticleRepository
+	minio minio_service.UploadService
 }
 
-func NewArticleService(repo repository.ArticleRepository) ArticleService {
-	return &articleService{repo}
+func NewArticleService(repo repository.ArticleRepository, minio minio_service.UploadService) ArticleService {
+	return &articleService{repo, minio}
 }
 
 func (s *articleService) CreateArticle(userID uint, title, content string, preview *multipart.FileHeader, attachments []*multipart.FileHeader) (*model.Article, error) {
@@ -26,7 +27,7 @@ func (s *articleService) CreateArticle(userID uint, title, content string, previ
 	}
 	defer previewFile.Close()
 
-	previewURL, err := minio.UploadFile("articles", "preview/"+preview.Filename, previewFile, preview.Size, preview.Header.Get("Content-Type"))
+	previewURL, err := s.minio.UploadFile("articles", "preview/"+preview.Filename, previewFile, preview.Size, preview.Header.Get("Content-Type"))
 	if err != nil {
 		return nil, err
 	}
@@ -48,7 +49,7 @@ func (s *articleService) CreateArticle(userID uint, title, content string, previ
 		}
 		defer f.Close()
 
-		url, err := minio.UploadFile("articles", "attachments/"+file.Filename, f, file.Size, file.Header.Get("Content-Type"))
+		url, err := s.minio.UploadFile("articles", "attachments/"+file.Filename, f, file.Size, file.Header.Get("Content-Type"))
 		if err != nil {
 			continue
 		}

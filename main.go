@@ -12,7 +12,7 @@ import (
 	"api-practice/internal/auth"
 	"api-practice/internal/db"
 	"api-practice/internal/handler"
-	"api-practice/internal/minio"
+	"api-practice/internal/minio_service"
 	"api-practice/internal/model"
 	"api-practice/internal/repository"
 	"api-practice/internal/service"
@@ -37,14 +37,20 @@ func main() {
 
 	app := fiber.New()
 
+	minioInit := minio_service.NewClientInitService()
+	minioClient, err := minioInit.Init()
+	if err != nil {
+		log.Fatal(err)
+	}
+
 	userRepository := repository.NewUserRepository()
 	userService := service.NewUserService(userRepository)
 	tokenService := auth.NewTokenService(os.Getenv("SECRET"))
 	userHandler := handler.NewUserHandler(userService, tokenService)
 	profileHandler := handler.NewProfileHandler(userService)
-	minio.Init()
 	articleRepository := repository.NewArticleRepository(db.DB)
-	articleService := service.NewArticleService(articleRepository)
+	minioService := minio_service.NewUploadService(minioClient)
+	articleService := service.NewArticleService(articleRepository, minioService)
 	articleHandler := handler.NewArticleHandler(articleService)
 
 	routes.SetupRoutes(app, userHandler, profileHandler, tokenService, articleHandler)
@@ -54,3 +60,7 @@ func main() {
 		return
 	}
 }
+
+// исправить названия по google style
+// переделать указатели
+// пересмотреть использование minio

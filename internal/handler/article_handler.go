@@ -19,7 +19,7 @@ func (h *ArticleHandler) CreateArticle(c *fiber.Ctx) error {
 
 	preview, err := c.FormFile("preview")
 	if err != nil {
-		return fiber.NewError(fiber.StatusBadRequest, "preview file required")
+		return fiber.NewError(fiber.StatusBadRequest, "review file required")
 	}
 
 	form, err := c.MultipartForm()
