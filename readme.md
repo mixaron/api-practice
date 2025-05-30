@@ -13,6 +13,11 @@ DB_PORT=3306
 
 SECRET=your_secret
 
+SMTP_HOST=smtp.gmail.com
+SMTP_PORT=587
+SMTP_USER=mail
+SMTP_PASS=password
+
 ```
 
 

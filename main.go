@@ -13,7 +13,6 @@ import (
 	"api-practice/internal/db"
 	"api-practice/internal/handler"
 	"api-practice/internal/minio_service"
-	"api-practice/internal/model"
 	"api-practice/internal/repository"
 	"api-practice/internal/service"
 	"api-practice/routes"
@@ -29,8 +28,7 @@ func main() {
 		log.Fatal("Ошибка загрузки .env файла")
 	}
 
-	db.Init()
-	dbErr := db.DB.AutoMigrate(&model.User{}, &model.Article{}, &model.Attachment{})
+	dbErr := db.Init()
 	if dbErr != nil {
 		return
 	}
@@ -61,6 +59,7 @@ func main() {
 	}
 }
 
-// исправить названия по google style
-// переделать указатели
-// пересмотреть использование minio
+// todo исправить названия по google style
+// todo переделать указатели
+// todo пересмотреть использование minio
+// todo Отдавать кастомные ошибки
