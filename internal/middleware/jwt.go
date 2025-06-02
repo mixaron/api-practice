@@ -11,9 +11,10 @@ func AuthMiddleware(tokenService auth.TokenService) fiber.Handler {
 		authHeader := c.Get("Authorization")
 
 		if authHeader == "" || !strings.HasPrefix(authHeader, "Bearer ") {
-			return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{
-				"error": "Missing or invalid Authorization header",
-			})
+			authHeader = c.Query("token")
+			if authHeader == "" {
+				return c.Status(fiber.StatusUnauthorized).SendString("Missing token")
+			}
 		}
 
 		tokenString := strings.TrimPrefix(authHeader, "Bearer ")

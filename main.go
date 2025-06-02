@@ -1,6 +1,6 @@
 // @title Rest API для тестового задания
 // @version 1.0
-// @description API для авторизации по jwt, созданию статей, использования websocket
+// @description API для авторизации по jwt, созданию статей, использования wsocket
 // @host localhost:3000
 // @BasePath /api
 // @securityDefinitions.apikey ApiKeyAuth
@@ -16,6 +16,7 @@ import (
 	"api-practice/internal/repository"
 	"api-practice/internal/service"
 	"api-practice/routes"
+	"api-practice/wsocket"
 	"github.com/gofiber/fiber/v2"
 	"github.com/joho/godotenv"
 	"log"
@@ -41,6 +42,7 @@ func main() {
 		log.Fatal(err)
 	}
 
+	websocket := wsocket.NewServer()
 	userRepository := repository.NewUserRepository()
 	userService := service.NewUserService(userRepository)
 	tokenService := auth.NewTokenService(os.Getenv("SECRET"))
@@ -49,9 +51,8 @@ func main() {
 	articleRepository := repository.NewArticleRepository(db.DB)
 	minioService := minio_service.NewUploadService(minioClient)
 	articleService := service.NewArticleService(articleRepository, minioService)
-	articleHandler := handler.NewArticleHandler(articleService)
-
-	routes.SetupRoutes(app, userHandler, profileHandler, tokenService, articleHandler)
+	articleHandler := handler.NewArticleHandler(articleService, *websocket)
+	routes.SetupRoutes(app, userHandler, profileHandler, tokenService, articleHandler, *websocket)
 
 	errApp := app.Listen(":3000")
 	if errApp != nil {
@@ -63,3 +64,4 @@ func main() {
 // todo переделать указатели
 // todo пересмотреть использование minio
 // todo Отдавать кастомные ошибки
+// todo доделать профиль
