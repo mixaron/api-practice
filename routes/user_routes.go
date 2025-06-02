@@ -27,7 +27,7 @@ func SetupRoutes(app *fiber.App, h *handler.UserHandler, p *handler.ProfileHandl
 
 	authRoute.Post("/login", h.Authenticate)
 
-	authGroup := api.Group("/", middleware.AuthMiddleware(ts))
+	authGroup := api.Group("/", middleware.AuthMiddleware(ts, h.GetService()))
 
 	authGroup.Get("/profile", p.GetUserProfile)
 	authGroup.Post("/articles", a.CreateArticle)
