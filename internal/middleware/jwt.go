@@ -2,18 +2,19 @@ package middleware
 
 import (
 	"api-practice/internal/auth"
+	"api-practice/internal/service"
 	"github.com/gofiber/fiber/v2"
 	"strings"
 )
 
-func AuthMiddleware(tokenService auth.TokenService) fiber.Handler {
+func AuthMiddleware(tokenService auth.TokenService, userService service.UserService) fiber.Handler {
 	return func(c *fiber.Ctx) error {
 		authHeader := c.Get("Authorization")
 
 		if authHeader == "" || !strings.HasPrefix(authHeader, "Bearer ") {
 			authHeader = c.Query("token")
 			if authHeader == "" {
-				return c.Status(fiber.StatusUnauthorized).SendString("Missing token")
+				return c.Status(fiber.StatusUnauthorized).SendString("missing token")
 			}
 		}
 
@@ -22,14 +23,14 @@ func AuthMiddleware(tokenService auth.TokenService) fiber.Handler {
 		claims, err := tokenService.ValidateToken(tokenString)
 		if err != nil {
 			return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{
-				"error": "Invalid or expired token",
+				"error": "invalid or expired token",
 			})
 		}
 
 		userIDFloat, ok := claims["sub"].(float64)
-		if !ok {
+		if !ok || !userService.IsUserExists(uint(userIDFloat)) {
 			return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{
-				"error": "Invalid user ID in token",
+				"error": "invalid user ID in token",
 			})
 		}
 
