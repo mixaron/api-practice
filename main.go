@@ -42,7 +42,6 @@ func main() {
 		log.Fatal(err)
 	}
 
-	websocket := wsocket.NewServer()
 	userRepository := repository.NewUserRepository()
 	userService := service.NewUserService(userRepository)
 	tokenService := auth.NewTokenService(os.Getenv("SECRET"))
@@ -51,6 +50,9 @@ func main() {
 	articleRepository := repository.NewArticleRepository(db.DB)
 	minioService := minio_service.NewUploadService(minioClient)
 	articleService := service.NewArticleService(articleRepository, minioService)
+
+	websocket := wsocket.NewServer(userService, articleService)
+
 	articleHandler := handler.NewArticleHandler(articleService, *websocket)
 	routes.SetupRoutes(app, userHandler, profileHandler, tokenService, articleHandler, *websocket)
 

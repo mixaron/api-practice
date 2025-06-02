@@ -180,3 +180,7 @@ func sendEmailSMTP(to, subject, body string) error {
 
 	return smtp.SendMail(host+":"+port, plainAuth, from, []string{to}, msg)
 }
+
+func (h *UserHandler) GetService() service.UserService {
+	return h.service
+}
