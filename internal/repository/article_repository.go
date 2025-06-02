@@ -4,6 +4,7 @@ import (
 	"api-practice/internal/model"
 	"fmt"
 	"gorm.io/gorm"
+	"time"
 )
 
 type ArticleRepository interface {
@@ -14,6 +15,7 @@ type ArticleRepository interface {
 	Update(article *model.Article) error
 	FindByID(id string) (*model.Article, error)
 	DeleteAttachmentsByArticleID(articleID uint) error
+	GetAllPublishedAfterTime(time time.Time) ([]model.Article, error)
 }
 
 type articleRepo struct {
@@ -87,4 +89,17 @@ func (r *articleRepo) FindByID(id string) (*model.Article, error) {
 
 func (r *articleRepo) DeleteAttachmentsByArticleID(articleID uint) error {
 	return r.db.Where("article_id = ?", articleID).Unscoped().Delete(&model.Attachment{}).Error
+}
+
+func (r *articleRepo) GetAllPublishedAfterTime(time time.Time) ([]model.Article, error) {
+	var articles []model.Article
+	if err := r.db.
+		Preload("User").
+		Preload("Attachments").
+		Where("is_published = ?", true).
+		Where("updated_at  > ?", time).
+		Find(&articles).Error; err != nil {
+		return nil, err
+	}
+	return articles, nil
 }

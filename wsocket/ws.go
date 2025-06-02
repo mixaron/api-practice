@@ -1,31 +1,27 @@
 package wsocket
 
 import (
+	"api-practice/internal/service"
+	"encoding/json"
 	"fmt"
 	"github.com/gofiber/websocket/v2"
-	"time"
 )
 
 type Server struct {
-	conns      map[*websocket.Conn]bool
-	userMap    map[string]time.Time
-	messageMap map[string]time.Time
+	conns          map[*websocket.Conn]bool
+	userService    service.UserService
+	articleService service.ArticleService
 }
 
-type MessageRequest struct {
-	Message string `json:"message"`
-}
-
-func NewServer() *Server {
+func NewServer(u service.UserService, a service.ArticleService) *Server {
 	return &Server{
-		conns:      make(map[*websocket.Conn]bool),
-		userMap:    make(map[string]time.Time),
-		messageMap: make(map[string]time.Time),
+		conns:          make(map[*websocket.Conn]bool),
+		userService:    u,
+		articleService: a,
 	}
 }
 
 func (s *Server) SendMessage(value string) {
-	s.messageMap[value] = time.Now()
 	s.Broadcast([]byte(value))
 }
 
@@ -44,44 +40,44 @@ func (s *Server) readLoop(conn *websocket.Conn, userID string) {
 			return
 		}
 		delete(s.conns, conn)
-		s.userMap[userID] = time.Now()
+
+		errUpdateLastTime := s.userService.SetUserLastOnlineTime(userID)
+		if errUpdateLastTime != nil {
+			return
+		}
 	}()
 
 	for {
 		mt, _, err := conn.ReadMessage()
-		if err != nil {
-			fmt.Println("read error:", err)
-			if websocket.IsCloseError(err, websocket.CloseNormalClosure, websocket.CloseGoingAway) {
-				fmt.Println("current user disc: " + userID)
-				s.userMap[userID] = time.Now()
-			}
-			break
-		}
 
 		if err := conn.WriteMessage(mt, []byte("connect successful")); err != nil {
 			fmt.Println("failed to connect user:", err)
 			break
 		}
 
-		if _, exists := s.userMap[userID]; !exists {
+		userLastOnline, err := s.userService.GetUserLastOnlineTime(userID)
+		if err != nil {
+			fmt.Println(err)
+			break
+		}
+
+		articles, _ := s.articleService.GetAllArticlesAfterTime(userLastOnline)
+
+		if len(articles) > 0 {
 			if err := conn.WriteMessage(mt, []byte("new messages:")); err != nil {
-				fmt.Println("failed to send message history:", err)
-				break
+				fmt.Println("failed to send message notification:", err)
+				return
 			}
 
-			for message := range s.messageMap {
-				if err := conn.WriteMessage(mt, []byte(message)); err != nil {
-					fmt.Println("failed to send message history:", err)
-					break
+			for _, article := range articles {
+				jsonArticle, err := json.Marshal(article)
+				if err != nil {
+					fmt.Println("failed to marshal article:", err)
+					continue
 				}
-			}
-		} else {
-			for key, value := range s.messageMap {
-				if value.After(s.userMap[userID]) {
-					if err := conn.WriteMessage(mt, []byte(key)); err != nil {
-						fmt.Printf("failed to send message to %s: %v\n", userID, err)
-						break
-					}
+				if err := conn.WriteMessage(mt, jsonArticle); err != nil {
+					fmt.Println("failed to send article:", err)
+					break
 				}
 			}
 		}

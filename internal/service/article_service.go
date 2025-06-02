@@ -6,6 +6,7 @@ import (
 	"api-practice/internal/repository"
 	"fmt"
 	"mime/multipart"
+	"time"
 )
 
 type ArticleService interface {
@@ -15,6 +16,7 @@ type ArticleService interface {
 	DeleteArticle(articleID string, userID uint) error
 	UpdateArticle(articleID string, userID uint, title, content string, preview *multipart.FileHeader,
 		attachments []*multipart.FileHeader) (*model.Article, error)
+	GetAllArticlesAfterTime(time time.Time) ([]model.Article, error)
 }
 
 type articleService struct {
@@ -157,4 +159,14 @@ func (s *articleService) UpdateArticle(
 	}
 
 	return article, nil
+}
+
+func (a articleService) GetAllArticlesAfterTime(time time.Time) ([]model.Article, error) {
+	articles, err := a.repo.GetAllPublishedAfterTime(time)
+
+	if err != nil {
+		return nil, err
+	}
+
+	return articles, nil
 }
