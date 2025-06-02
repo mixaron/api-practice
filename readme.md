@@ -35,3 +35,11 @@ go run main.go
 ```
 http://localhost:3000/api/swagger/index.html
 ```
+
+## WebSocket
+
+Я установил расширение Simple WebSocket Client и указал в поле Server Location адрес:
+ws://localhost:3000/api/ws?token={token}.
+После изменения статуса статьи в message log отображается её ID.
+Также, если статьи были опубликованы до того, как пользователь подключился,
+в логах будут выведены и эти статьи.
