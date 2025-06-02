@@ -15,9 +15,232 @@ const docTemplate = `{
     "host": "{{.Host}}",
     "basePath": "{{.BasePath}}",
     "paths": {
-        "/auth/login": {
+        "/api/articles": {
+            "get": {
+                "description": "find and return all users articles",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "article"
+                ],
+                "summary": "Get all articles",
+                "responses": {
+                    "200": {
+                        "description": "Article published successfully",
+                        "schema": {
+                            "$ref": "#/definitions/dto.ArticleBaseResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/dto.ErrorBaseResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/dto.ErrorBaseResponse"
+                        }
+                    }
+                }
+            },
             "post": {
-                "description": "Аутентифицирует пользователя и возвращает JWT токен",
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "description": "Create Article by auth user. post http method",
+                "consumes": [
+                    "multipart/form-data"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "article"
+                ],
+                "summary": "Create Article post",
+                "parameters": [
+                    {
+                        "description": "article create data",
+                        "name": "user",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/dto.ArticleRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Article published successfully",
+                        "schema": {
+                            "$ref": "#/definitions/dto.ArticleBaseResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/dto.ErrorBaseResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/dto.ErrorBaseResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/articles/id": {
+            "put": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "description": "user update his own article",
+                "consumes": [
+                    "multipart/form-data"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "article"
+                ],
+                "summary": "Update article",
+                "parameters": [
+                    {
+                        "description": "article update data",
+                        "name": "user",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/dto.ArticleRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Article updated successfully",
+                        "schema": {
+                            "$ref": "#/definitions/dto.ArticleBaseResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/dto.ErrorBaseResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/dto.ErrorBaseResponse"
+                        }
+                    }
+                }
+            },
+            "patch": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "description": "user publish his own article",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "article"
+                ],
+                "summary": "Publish article",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Article ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Article published successfully",
+                        "schema": {
+                            "$ref": "#/definitions/dto.SuccessBaseResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/dto.ErrorBaseResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/dto.ErrorBaseResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/articles/{id}": {
+            "delete": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "description": "User deletes his own article by ID. Requires authentication.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "article"
+                ],
+                "summary": "Delete article",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "format": "uuid",
+                        "description": "Article ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Article deleted successfully",
+                        "schema": {
+                            "$ref": "#/definitions/dto.SuccessBaseResponse"
+                        }
+                    },
+                    "403": {
+                        "description": "Article does not belong to user",
+                        "schema": {
+                            "$ref": "#/definitions/dto.ErrorBaseResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Article not found",
+                        "schema": {
+                            "$ref": "#/definitions/dto.ErrorBaseResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/auth/login": {
+            "post": {
+                "description": "auth user and return jwt",
                 "consumes": [
                     "application/json"
                 ],
@@ -61,9 +284,9 @@ const docTemplate = `{
                 }
             }
         },
-        "/auth/register": {
+        "/api/auth/reg": {
             "post": {
-                "description": "Создает нового пользователя",
+                "description": "Registers new user and sends verification code",
                 "consumes": [
                     "application/json"
                 ],
@@ -73,10 +296,10 @@ const docTemplate = `{
                 "tags": [
                     "auth"
                 ],
-                "summary": "Register a new user",
+                "summary": "Register new user",
                 "parameters": [
                     {
-                        "description": "User registration info",
+                        "description": "User registration data",
                         "name": "user",
                         "in": "body",
                         "required": true,
@@ -86,10 +309,10 @@ const docTemplate = `{
                     }
                 ],
                 "responses": {
-                    "201": {
-                        "description": "Created",
+                    "200": {
+                        "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/dto.SuccessRegisterBaseResponse"
+                            "$ref": "#/definitions/dto.SuccessBaseResponse"
                         }
                     },
                     "400": {
@@ -107,6 +330,52 @@ const docTemplate = `{
                 }
             }
         },
+        "/api/auth/verify": {
+            "post": {
+                "description": "Verifies user's email with received code",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "auth"
+                ],
+                "summary": "Verify user registration",
+                "parameters": [
+                    {
+                        "description": "User registration data",
+                        "name": "user",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/dto.VerifyRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "Created",
+                        "schema": {
+                            "$ref": "#/definitions/dto.SuccessBaseResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/dto.ErrorBaseResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/dto.ErrorBaseResponse"
+                        }
+                    }
+                }
+            }
+        },
         "/profile": {
             "get": {
                 "security": [
@@ -114,7 +383,7 @@ const docTemplate = `{
                         "ApiKeyAuth": []
                     }
                 ],
-                "description": "Получить профиль текущего пользователя",
+                "description": "get current user profile",
                 "produces": [
                     "application/json"
                 ],
@@ -140,6 +409,89 @@ const docTemplate = `{
         }
     },
     "definitions": {
+        "dto.ArticleBaseResponse": {
+            "type": "object",
+            "properties": {
+                "attachments": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/dto.AttachmentBaseResponse"
+                    }
+                },
+                "author_id": {
+                    "type": "integer",
+                    "example": 1
+                },
+                "content": {
+                    "type": "string",
+                    "example": "content example"
+                },
+                "created_at": {
+                    "type": "string",
+                    "example": "2025-05-31T10:30:00Z"
+                },
+                "is_published": {
+                    "type": "boolean",
+                    "example": true
+                },
+                "preview_url": {
+                    "type": "string",
+                    "example": "https://example.com/images/article1.jpg"
+                },
+                "title": {
+                    "type": "string",
+                    "example": "title example"
+                }
+            }
+        },
+        "dto.ArticleRequest": {
+            "type": "object",
+            "properties": {
+                "attachments": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/dto.AttachmentRequest"
+                    }
+                },
+                "content": {
+                    "type": "string"
+                },
+                "previewURL": {
+                    "type": "string"
+                },
+                "title": {
+                    "type": "string"
+                }
+            }
+        },
+        "dto.AttachmentBaseResponse": {
+            "type": "object",
+            "properties": {
+                "file_name": {
+                    "type": "string",
+                    "example": "document.pdf"
+                },
+                "file_size": {
+                    "type": "integer",
+                    "example": 1024
+                },
+                "url": {
+                    "type": "string",
+                    "example": "https://example.com/files/document.pdf"
+                }
+            }
+        },
+        "dto.AttachmentRequest": {
+            "type": "object",
+            "properties": {
+                "fileName": {
+                    "type": "string"
+                },
+                "url": {
+                    "type": "string"
+                }
+            }
+        },
         "dto.ErrorBaseResponse": {
             "type": "object",
             "properties": {
@@ -197,12 +549,9 @@ const docTemplate = `{
                 }
             }
         },
-        "dto.SuccessProfileBaseResponse": {
+        "dto.SuccessBaseResponse": {
             "type": "object",
             "properties": {
-                "data": {
-                    "$ref": "#/definitions/dto.ProfileResponse"
-                },
                 "message": {
                     "type": "string",
                     "example": "Success message"
@@ -213,9 +562,12 @@ const docTemplate = `{
                 }
             }
         },
-        "dto.SuccessRegisterBaseResponse": {
+        "dto.SuccessProfileBaseResponse": {
             "type": "object",
             "properties": {
+                "data": {
+                    "$ref": "#/definitions/dto.ProfileResponse"
+                },
                 "message": {
                     "type": "string",
                     "example": "Success message"
@@ -249,6 +601,17 @@ const docTemplate = `{
                     "type": "string"
                 }
             }
+        },
+        "dto.VerifyRequest": {
+            "type": "object",
+            "properties": {
+                "code": {
+                    "type": "string"
+                },
+                "email": {
+                    "type": "string"
+                }
+            }
         }
     },
     "securityDefinitions": {
@@ -267,7 +630,7 @@ var SwaggerInfo = &swag.Spec{
 	BasePath:         "/api",
 	Schemes:          []string{},
 	Title:            "Rest API для тестового задания",
-	Description:      "API для авторизации по jwt, созданию статей, использования websocket",
+	Description:      "API для авторизации по jwt, созданию статей, использования wsocket",
 	InfoInstanceName: "swagger",
 	SwaggerTemplate:  docTemplate,
 	LeftDelim:        "{{",

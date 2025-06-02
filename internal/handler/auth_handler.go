@@ -33,6 +33,17 @@ func NewUserHandler(service service.UserService, tokenService auth.TokenService)
 	}
 }
 
+// Register godoc
+// @Summary Register new user
+// @Description Registers new user and sends verification code
+// @Tags auth
+// @Accept json
+// @Produce json
+// @Param user body dto.RegisterRequest true "User registration data"
+// @Success 200 {object} dto.SuccessBaseResponse
+// @Failure 400 {object} dto.ErrorBaseResponse
+// @Failure 500 {object} dto.ErrorBaseResponse
+// @Router /api/auth/reg [post]
 func (h *UserHandler) Register(c *fiber.Ctx) error {
 	var req RegisterRequest
 
@@ -75,14 +86,22 @@ func (h *UserHandler) Register(c *fiber.Ctx) error {
 	return SuccessNoData(c, "Verification code sent. Please verify your email.", fiber.StatusOK)
 }
 
+// VerifyRegistration godoc
+// @Summary Verify user registration
+// @Description Verifies user's email with received code
+// @Tags auth
+// @Accept json
+// @Produce json
+// @Param user body dto.VerifyRequest true "User registration data"
+// @Success 201 {object} dto.SuccessBaseResponse
+// @Failure 400 {object} dto.ErrorBaseResponse
+// @Failure 401 {object} dto.ErrorBaseResponse
+// @Router /api/auth/verify [post]
 func (h *UserHandler) VerifyRegistration(c *fiber.Ctx) error {
-	var req struct {
-		Email string `json:"email"`
-		Code  string `json:"code"`
-	}
+	var req VerifyRequest
 
 	if err := c.BodyParser(&req); err != nil {
-		return Error(c, "Invalid request body", fiber.StatusBadRequest)
+		return Error(c, "invalid request body", fiber.StatusBadRequest)
 	}
 
 	h.emailCodesMu.Lock()
@@ -90,7 +109,7 @@ func (h *UserHandler) VerifyRegistration(c *fiber.Ctx) error {
 	h.emailCodesMu.Unlock()
 
 	if !ok || req.Code != expectedCode {
-		return Error(c, "Invalid or expired verification code", fiber.StatusUnauthorized)
+		return Error(c, "invalid or expired verification code", fiber.StatusUnauthorized)
 	}
 
 	h.tempUsersMu.Lock()
@@ -98,7 +117,7 @@ func (h *UserHandler) VerifyRegistration(c *fiber.Ctx) error {
 	h.tempUsersMu.Unlock()
 
 	if !ok {
-		return Error(c, "User data not found, please register again", fiber.StatusBadRequest)
+		return Error(c, "user data not found, please register again", fiber.StatusBadRequest)
 	}
 
 	if err := h.service.Register(&user); err != nil {
@@ -113,12 +132,12 @@ func (h *UserHandler) VerifyRegistration(c *fiber.Ctx) error {
 	delete(h.tempUsers, req.Email)
 	h.tempUsersMu.Unlock()
 
-	return SuccessNoData(c, "User successfully registered and verified", fiber.StatusCreated)
+	return SuccessNoData(c, "user successfully registered and verified", fiber.StatusCreated)
 }
 
 // Authenticate godoc
 // @Summary Authenticate user
-// @Description Аутентифицирует пользователя и возвращает JWT токен
+// @Description auth user and return jwt
 // @Tags auth
 // @Accept json
 // @Produce json
@@ -126,7 +145,7 @@ func (h *UserHandler) VerifyRegistration(c *fiber.Ctx) error {
 // @Success 200 {object} dto.TokenBaseResponse
 // @Failure 400 {object} dto.ErrorBaseResponse
 // @Failure 500 {object} dto.ErrorBaseResponse
-// @Router /auth/login [post]
+// @Router /api/auth/login [post]
 func (h *UserHandler) Authenticate(c *fiber.Ctx) error {
 	var req LoginRequest
 
@@ -144,7 +163,7 @@ func (h *UserHandler) Authenticate(c *fiber.Ctx) error {
 		return Error(c, err.Error(), fiber.StatusBadRequest)
 	}
 
-	return Success(c, "Authenticated", &TokenResponse{Token: token}, fiber.StatusOK)
+	return Success(c, "authenticated", &TokenResponse{Token: token}, fiber.StatusOK)
 }
 
 func sendEmailSMTP(to, subject, body string) error {

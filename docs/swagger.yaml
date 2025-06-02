@@ -1,5 +1,62 @@
 basePath: /api
 definitions:
+  dto.ArticleBaseResponse:
+    properties:
+      attachments:
+        items:
+          $ref: '#/definitions/dto.AttachmentBaseResponse'
+        type: array
+      author_id:
+        example: 1
+        type: integer
+      content:
+        example: content example
+        type: string
+      created_at:
+        example: "2025-05-31T10:30:00Z"
+        type: string
+      is_published:
+        example: true
+        type: boolean
+      preview_url:
+        example: https://example.com/images/article1.jpg
+        type: string
+      title:
+        example: title example
+        type: string
+    type: object
+  dto.ArticleRequest:
+    properties:
+      attachments:
+        items:
+          $ref: '#/definitions/dto.AttachmentRequest'
+        type: array
+      content:
+        type: string
+      previewURL:
+        type: string
+      title:
+        type: string
+    type: object
+  dto.AttachmentBaseResponse:
+    properties:
+      file_name:
+        example: document.pdf
+        type: string
+      file_size:
+        example: 1024
+        type: integer
+      url:
+        example: https://example.com/files/document.pdf
+        type: string
+    type: object
+  dto.AttachmentRequest:
+    properties:
+      fileName:
+        type: string
+      url:
+        type: string
+    type: object
   dto.ErrorBaseResponse:
     properties:
       message:
@@ -40,10 +97,8 @@ definitions:
     - email
     - password
     type: object
-  dto.SuccessProfileBaseResponse:
+  dto.SuccessBaseResponse:
     properties:
-      data:
-        $ref: '#/definitions/dto.ProfileResponse'
       message:
         example: Success message
         type: string
@@ -51,8 +106,10 @@ definitions:
         example: success
         type: string
     type: object
-  dto.SuccessRegisterBaseResponse:
+  dto.SuccessProfileBaseResponse:
     properties:
+      data:
+        $ref: '#/definitions/dto.ProfileResponse'
       message:
         example: Success message
         type: string
@@ -76,18 +133,167 @@ definitions:
       token:
         type: string
     type: object
+  dto.VerifyRequest:
+    properties:
+      code:
+        type: string
+      email:
+        type: string
+    type: object
 host: localhost:3000
 info:
   contact: {}
-  description: API для авторизации по jwt, созданию статей, использования websocket
+  description: API для авторизации по jwt, созданию статей, использования wsocket
   title: Rest API для тестового задания
   version: "1.0"
 paths:
-  /auth/login:
+  /api/articles:
+    get:
+      description: find and return all users articles
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Article published successfully
+          schema:
+            $ref: '#/definitions/dto.ArticleBaseResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/dto.ErrorBaseResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/dto.ErrorBaseResponse'
+      summary: Get all articles
+      tags:
+      - article
+    post:
+      consumes:
+      - multipart/form-data
+      description: Create Article by auth user. post http method
+      parameters:
+      - description: article create data
+        in: body
+        name: user
+        required: true
+        schema:
+          $ref: '#/definitions/dto.ArticleRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Article published successfully
+          schema:
+            $ref: '#/definitions/dto.ArticleBaseResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/dto.ErrorBaseResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/dto.ErrorBaseResponse'
+      security:
+      - ApiKeyAuth: []
+      summary: Create Article post
+      tags:
+      - article
+  /api/articles/{id}:
+    delete:
+      description: User deletes his own article by ID. Requires authentication.
+      parameters:
+      - description: Article ID
+        format: uuid
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Article deleted successfully
+          schema:
+            $ref: '#/definitions/dto.SuccessBaseResponse'
+        "403":
+          description: Article does not belong to user
+          schema:
+            $ref: '#/definitions/dto.ErrorBaseResponse'
+        "404":
+          description: Article not found
+          schema:
+            $ref: '#/definitions/dto.ErrorBaseResponse'
+      security:
+      - ApiKeyAuth: []
+      summary: Delete article
+      tags:
+      - article
+  /api/articles/id:
+    patch:
+      description: user publish his own article
+      parameters:
+      - description: Article ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Article published successfully
+          schema:
+            $ref: '#/definitions/dto.SuccessBaseResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/dto.ErrorBaseResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/dto.ErrorBaseResponse'
+      security:
+      - ApiKeyAuth: []
+      summary: Publish article
+      tags:
+      - article
+    put:
+      consumes:
+      - multipart/form-data
+      description: user update his own article
+      parameters:
+      - description: article update data
+        in: body
+        name: user
+        required: true
+        schema:
+          $ref: '#/definitions/dto.ArticleRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Article updated successfully
+          schema:
+            $ref: '#/definitions/dto.ArticleBaseResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/dto.ErrorBaseResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/dto.ErrorBaseResponse'
+      security:
+      - ApiKeyAuth: []
+      summary: Update article
+      tags:
+      - article
+  /api/auth/login:
     post:
       consumes:
       - application/json
-      description: Аутентифицирует пользователя и возвращает JWT токен
+      description: auth user and return jwt
       parameters:
       - description: User login credentials
         in: body
@@ -113,13 +319,13 @@ paths:
       summary: Authenticate user
       tags:
       - auth
-  /auth/register:
+  /api/auth/reg:
     post:
       consumes:
       - application/json
-      description: Создает нового пользователя
+      description: Registers new user and sends verification code
       parameters:
-      - description: User registration info
+      - description: User registration data
         in: body
         name: user
         required: true
@@ -128,10 +334,10 @@ paths:
       produces:
       - application/json
       responses:
-        "201":
-          description: Created
+        "200":
+          description: OK
           schema:
-            $ref: '#/definitions/dto.SuccessRegisterBaseResponse'
+            $ref: '#/definitions/dto.SuccessBaseResponse'
         "400":
           description: Bad Request
           schema:
@@ -140,12 +346,42 @@ paths:
           description: Internal Server Error
           schema:
             $ref: '#/definitions/dto.ErrorBaseResponse'
-      summary: Register a new user
+      summary: Register new user
+      tags:
+      - auth
+  /api/auth/verify:
+    post:
+      consumes:
+      - application/json
+      description: Verifies user's email with received code
+      parameters:
+      - description: User registration data
+        in: body
+        name: user
+        required: true
+        schema:
+          $ref: '#/definitions/dto.VerifyRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/dto.SuccessBaseResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/dto.ErrorBaseResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/dto.ErrorBaseResponse'
+      summary: Verify user registration
       tags:
       - auth
   /profile:
     get:
-      description: Получить профиль текущего пользователя
+      description: get current user profile
       produces:
       - application/json
       responses:

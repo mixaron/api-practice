@@ -16,7 +16,7 @@ func NewProfileHandler(service service.UserService) *ProfileHandler {
 
 // GetUserProfile godoc
 // @Summary Get user profile
-// @Description Получить профиль текущего пользователя
+// @Description get current user profile
 // @Tags profile
 // @Security ApiKeyAuth
 // @Produce json
