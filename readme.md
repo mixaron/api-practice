@@ -30,10 +30,10 @@ go run main.go
 
 ---
 
-## Эндпоинты
+## Документация
 
 ```
-http://localhost:3000/api/swagger/index.html
+https://documenter.getpostman.com/view/27528778/2sB2qi8HvC#3e0f4e11-21fe-44c4-8bad-0841e89aafae
 ```
 
 ## WebSocket
