@@ -8,14 +8,14 @@ import (
 )
 
 type Server struct {
-	conns          map[*websocket.Conn]bool
+	conns          *Manager
 	userService    service.UserService
 	articleService service.ArticleService
 }
 
-func NewServer(u service.UserService, a service.ArticleService) *Server {
+func NewServer(u service.UserService, a service.ArticleService, m *Manager) *Server {
 	return &Server{
-		conns:          make(map[*websocket.Conn]bool),
+		conns:          m,
 		userService:    u,
 		articleService: a,
 	}
@@ -27,24 +27,15 @@ func (s *Server) SendMessage(value string) {
 
 func (s *Server) HandleWS(c *websocket.Conn, userID string) {
 	fmt.Println("new connection from user: ", userID)
-
-	s.conns[c] = true
-
+	s.conns.Add(c)
 	s.readLoop(c, userID)
 }
 
 func (s *Server) readLoop(conn *websocket.Conn, userID string) {
 	defer func() {
-		err := conn.Close()
-		if err != nil {
-			return
-		}
-		delete(s.conns, conn)
-
-		errUpdateLastTime := s.userService.SetUserLastOnlineTime(userID)
-		if errUpdateLastTime != nil {
-			return
-		}
+		conn.Close()
+		s.conns.Remove(conn)
+		_ = s.userService.SetUserLastOnlineTime(userID)
 	}()
 
 	for {
@@ -87,7 +78,7 @@ func (s *Server) readLoop(conn *websocket.Conn, userID string) {
 }
 
 func (s *Server) Broadcast(b []byte) {
-	for conn := range s.conns {
+	for _, conn := range s.conns.List() {
 		go func(conn *websocket.Conn) {
 			if err := conn.WriteMessage(websocket.TextMessage, b); err != nil {
 				fmt.Println("write error: ", err)
