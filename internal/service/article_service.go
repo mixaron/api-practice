@@ -21,10 +21,10 @@ type ArticleService interface {
 
 type articleService struct {
 	repo  repository.ArticleRepository
-	minio minio_service.UploadService
+	minio *minio_service.UploadServiceImpl
 }
 
-func NewArticleService(repo repository.ArticleRepository, minio minio_service.UploadService) ArticleService {
+func NewArticleService(repo repository.ArticleRepository, minio *minio_service.UploadServiceImpl) ArticleService {
 	return &articleService{repo, minio}
 }
 
@@ -35,7 +35,7 @@ func (s *articleService) CreateArticle(userID uint, title, content string, previ
 	}
 	defer previewFile.Close()
 
-	previewURL, err := s.minio.UploadFile("articles", "preview/"+preview.Filename, previewFile, preview.Size, preview.Header.Get("Content-Type"))
+	previewURL, err := s.minio.UploadFile("articles1", "preview/"+preview.Filename, previewFile, preview.Size, preview.Header.Get("Content-Type"))
 	if err != nil {
 		return nil, err
 	}

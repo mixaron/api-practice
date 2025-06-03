@@ -3,9 +3,11 @@ package minio_service
 import (
 	"context"
 	"fmt"
-	"github.com/minio/minio-go/v7"
 	"mime/multipart"
 	"os"
+
+	"github.com/aws/aws-sdk-go-v2/aws"
+	"github.com/aws/aws-sdk-go-v2/service/s3"
 )
 
 type UploadService interface {
@@ -13,22 +15,30 @@ type UploadService interface {
 }
 
 type UploadServiceImpl struct {
-	client *minio.Client
+	client *s3.Client
 }
 
-func NewUploadService(client *minio.Client) UploadService {
+func NewUploadService(client *s3.Client) *UploadServiceImpl {
 	return &UploadServiceImpl{client}
 }
 
-func (c *UploadServiceImpl) UploadFile(bucket string, objectName string, file multipart.File, fileSize int64, contentType string) (string, error) {
-	ctx := context.Background()
+func (s *UploadServiceImpl) UploadFile(bucket string, objectName string, file multipart.File, fileSize int64, contentType string) (string, error) {
+	defer file.Close()
 
-	_, err := c.client.PutObject(ctx, bucket, objectName, file, fileSize, minio.PutObjectOptions{
-		ContentType: contentType,
+	ctx := context.TODO()
+
+	_, err := s.client.PutObject(ctx, &s3.PutObjectInput{
+		Bucket:        aws.String(bucket),
+		Key:           aws.String(objectName),
+		Body:          file,
+		ContentLength: &fileSize,
+		ContentType:   aws.String(contentType),
 	})
 	if err != nil {
-		return "", err
+		return "", fmt.Errorf("ошибка загрузки объекта: %w", err)
 	}
 
-	return fmt.Sprintf("https://%s/%s/%s", os.Getenv("MINIO_URL"), bucket, objectName), nil
+	endpoint := os.Getenv("YANDEX_STORAGE_ENDPOINT")
+	url := fmt.Sprintf("https://%s/%s/%s", endpoint, bucket, objectName)
+	return url, nil
 }

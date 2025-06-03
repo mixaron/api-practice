@@ -37,7 +37,7 @@ func main() {
 	app := fiber.New()
 
 	minioInit := minio_service.NewClientInitService()
-	minioClient, err := minioInit.Init()
+	minioClient, err := minioInit.InitYandexClient()
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -50,8 +50,8 @@ func main() {
 	articleRepository := repository.NewArticleRepository(db.DB)
 	minioService := minio_service.NewUploadService(minioClient)
 	articleService := service.NewArticleService(articleRepository, minioService)
-
-	websocket := wsocket.NewServer(userService, articleService)
+	socketManager := wsocket.NewManager()
+	websocket := wsocket.NewServer(userService, articleService, socketManager)
 
 	articleHandler := handler.NewArticleHandler(articleService, *websocket)
 	routes.SetupRoutes(app, userHandler, profileHandler, tokenService, articleHandler, *websocket)

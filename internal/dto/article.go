@@ -13,6 +13,7 @@ type ArticleRequest struct {
 	Attachments []AttachmentRequest
 }
 type ArticleResponse struct {
+	ID          uint                 `json:"id"`
 	Title       string               `json:"title"`
 	Content     string               `json:"content"`
 	PreviewURL  string               `json:"preview_url"`
@@ -24,6 +25,7 @@ type ArticleResponse struct {
 
 func ToResponse(article *model.Article) ArticleResponse {
 	return ArticleResponse{
+		ID:          article.ID,
 		Title:       article.Title,
 		Content:     article.Content,
 		PreviewURL:  article.PreviewURL,
